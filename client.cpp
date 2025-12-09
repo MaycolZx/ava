@@ -74,11 +74,11 @@ ssize_t read_n_bytes(int fd, char *buffer, size_t n) {
 void enviarP_matrix(int clientSocketFD, const string &sizeNN) {
   char tipo = 'G';
   std::string tamano_Size = std::to_string(sizeNN.length());
-  tamano_Size = std::string(5 - tamano_Size.length(), '0') + tamano_Size;
+  tamano_Size = std::string(5 - tamano_Size.length(), '0') + sizeNN;
 
   std::string paquete;
-  paquete += tipo;   // (1 byte)
-  paquete += sizeNN; // (9 bytes)
+  paquete += tipo;        // (1 byte)
+  paquete += tamano_Size; // (5 bytes)
   cout << paquete << endl;
 
   ssize_t bytes_written =
@@ -161,9 +161,7 @@ void functionInputC_S(int socketFD) {
         snprintf(buffer, sizeof(buffer), "%s", commandSpec);
       } else if (*line == 'G') {
         if (line[1] == ':') {
-          // Puntero al inicio del número (saltamos G y :)
           char *valor_start = line + 2;
-          // Validación simple: asegurar que no esté vacío
           if (*valor_start == '\0') {
             cerr << "Error: Valor vacío" << endl;
             return;
@@ -282,22 +280,6 @@ void leerBin(string &a, int indeX) {
   double tmpV;
   rBin.seekg(indeX * sizeof(double));
   rBin.read(reinterpret_cast<char *>(&tmpV), sizeof(double));
-}
-
-void genBin() {
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<> distrib_rango(10.0, 20.0);
-  string a = "./Binarios/treeQ.bin";
-  ofstream bin_data(a, ios::binary);
-  if (bin_data) {
-    cout << "Entramos al binario" << endl;
-    for (int i = 0; i < 10; i++) {
-      double valorT = distrib_rango(gen);
-      bin_data.write(reinterpret_cast<const char *>(&valorT), sizeof(double));
-    }
-  }
-  bin_data.close();
 }
 
 int main() {

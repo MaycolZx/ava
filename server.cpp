@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 #include <netinet/in.h>
+#include <random>
 #include <string>
 #include <sys/socket.h>
 #include <thread>
@@ -11,6 +12,37 @@
 using namespace std;
 
 map<std::string, int> maPair;
+
+void genBin(string &a, int sizeNN) {
+  cout << "GENBIN" << endl;
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> distrib_rango(0.0, 100.0);
+  ofstream bin_data(a, ios::binary);
+  if (bin_data) {
+    cout << "Entramos al binario" << endl;
+    for (int i = 0; i < sizeNN; i++) {
+      for (int j = 0; j < sizeNN; j++) {
+        double valorT = distrib_rango(gen);
+        cout << valorT << " ";
+        bin_data.write(reinterpret_cast<const char *>(&valorT), sizeof(double));
+      }
+      cout << endl;
+    }
+  }
+  bin_data.close();
+}
+
+void leerBin(string &a) {
+  cout << "LEERBIN" << endl;
+  ifstream rBin(a, ios::binary);
+  double tmpV;
+  while (rBin.read(reinterpret_cast<char *>(&tmpV), sizeof(double))) {
+    cout << tmpV << " ";
+  }
+  // rBin.seekg(indeX * sizeof(double));
+  // rBin.read(reinterpret_cast<char *>(&tmpV), sizeof(double));
+}
 
 ssize_t read_n_bytes(int fd, char *buffer, size_t n) {
   ssize_t total_bytes_read = 0;
@@ -86,18 +118,14 @@ void enviarPaqueteMensaje(int clientSocketFD, const std::string &nombre,
   }
 }
 
-// Función para enviar el paquete a todos los clientes, excepto al emisor
 void enviarPaqueteATodos(int clientSocketFD, const std::string &nombre,
                          const std::string &mensaje) {
   char tipo = 'B';
-
   std::string tamano_nombre = std::to_string(nombre.length());
   tamano_nombre = std::string(4 - tamano_nombre.length(), '0') + tamano_nombre;
-
   std::string tamano_mensaje = std::to_string(mensaje.length());
   tamano_mensaje =
       std::string(5 - tamano_mensaje.length(), '0') + tamano_mensaje;
-
   time_t now = time(0);
   struct tm *now_tm = localtime(&now);
   char time_str[11];
@@ -164,8 +192,7 @@ bool sendError(int clientSocketFD, char valorTMP) {
     }
     varU = 0;
     return true;
-  }
-  if (valorTMP == 'm') { // Mensaje privado
+  } else if (valorTMP == 'm') { // Mensaje privado
     char name_size_str[5] = {0};
     char message_size_str[6] = {0};
     // leer tamaño del nombre (4 bytes)
@@ -279,12 +306,15 @@ bool sendError(int clientSocketFD, char valorTMP) {
     return true;
   } else if (valorTMP == 'G') {
     char file_size_str[6] = {0};
-    if (read_n_bytes(clientSocketFD, file_size_str, 5) <= 0) {
+    if (read_n_bytes(clientSocketFD, file_size_str, 6) <= 0) {
       std::cerr << "Error leyendo el tamaño del nombre del archivo.\n";
       return false;
     }
     int content_size = std::stoi(file_size_str);
-    cout << content_size << endl;
+    cout << "valor: " << content_size << endl;
+    string a = "./binData/datA.bin";
+    genBin(a, content_size);
+    leerBin(a);
     varU = 0;
     return true;
   } else if (valorTMP == 'L') {
